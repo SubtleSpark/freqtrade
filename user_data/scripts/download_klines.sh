@@ -11,9 +11,9 @@ PAIRS=("BTC/USDT" "ETH/USDT" "SOL/USDT" "DOGE/USDT" "XRP/USDT" "OKB/USDT")
 TIMEFRAMES=("1m" "5m" "30m" "1h" "4h")
 
 # 时间范围配置
-START_YEAR=2024
+START_YEAR=2020
 START_MONTH=1
-END_YEAR=2024
+END_YEAR=2025
 END_MONTH=12
 
 # 交易所
@@ -54,17 +54,13 @@ while true; do
     echo ""
     echo "======== ${current_year}年${current_month}月 ========"
 
-    for PAIR in "${PAIRS[@]}"; do
-        for TF in "${TIMEFRAMES[@]}"; do
-            echo ">>> 下载 $PAIR $TF ($timerange) ..."
-            freqtrade download-data \
-                --exchange "$EXCHANGE" \
-                --pairs "$PAIR" \
-                -t "$TF" \
-                --timerange "$timerange" \
-                --prepend
-        done
-    done
+    echo ">>> 下载 [${PAIRS[*]}] [${TIMEFRAMES[*]}] ($timerange) ..."
+    freqtrade download-data \
+        --exchange "$EXCHANGE" \
+        --pairs "${PAIRS[@]}" \
+        -t "${TIMEFRAMES[@]}" \
+        --timerange "$timerange" \
+        --prepend
 
     # 检查是否到达起始月份
     if [ $current_year -eq $START_YEAR ] && [ $current_month -eq $START_MONTH ]; then
