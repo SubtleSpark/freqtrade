@@ -9,6 +9,14 @@ user_data/*
 !user_data/notebooks
 !user_data/models
 !user_data/freqaimodels
+
+# 追踪我的策略代码
+!user_data/strategies/
+user_data/strategies/__pycache__/
+
+# 追踪自定义脚本
+!user_data/scripts/
+user_data/scripts/__pycache__/
 user_data/freqaimodels/*
 user_data/models/*
 user_data/notebooks/*
