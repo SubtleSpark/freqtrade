@@ -9,6 +9,7 @@ user_data/*
 !user_data/notebooks
 !user_data/models
 !user_data/freqaimodels
+!user_data/docs
 
 # 追踪我的策略代码
 !user_data/strategies/
