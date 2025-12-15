@@ -94,21 +94,72 @@ dataframe['%tf_1d_ohlcv_0_high'] = ...
 - 模型按需加载数据，支持流式处理
 - 可利用内存映射 (mmap) 高效读取 feather 文件
 
-### 2.3 数据缓存与索引
+### 2.3 时间对齐与数据定位 (关键)
+
+**问题**: 不同时间周期的"最新完成 K 线"时间点不同，必须正确处理以避免未来数据泄露。
+
+```
+假设当前时间戳: 2024-01-15 14:35 UTC
+
+各周期最新完成的 K 线:
+┌─────────┬─────────────────────┬──────────────────────────────┐
+│ 周期    │ 最新完成 K 线时间   │ 说明                         │
+├─────────┼─────────────────────┼──────────────────────────────┤
+│ 5m      │ 14:30 - 14:35       │ 刚完成                       │
+│ 15m     │ 14:15 - 14:30       │ 14:30-14:45 还在进行中       │
+│ 1h      │ 13:00 - 14:00       │ 14:00-15:00 还在进行中       │
+│ 4h      │ 08:00 - 12:00       │ 12:00-16:00 还在进行中       │
+│ 1d      │ 01-14 00:00 UTC     │ 今天的日线还未收盘           │
+└─────────┴─────────────────────┴──────────────────────────────┘
+```
+
+**时间定位函数实现**:
+
+```python
+def _locate_index(self, df: pd.DataFrame, timestamp: pd.Timestamp, tf: str) -> int:
+    """
+    找到 timestamp 之前最近一根已完成的 K 线索引
+
+    关键: 使用 K 线的收盘时间进行定位，确保不引入未来数据
+
+    Args:
+        df: K 线 DataFrame，'date' 列是 K 线开始时间
+        timestamp: 当前时间戳
+        tf: 时间周期字符串，如 '5m', '1h', '1d'
+
+    Returns:
+        最新完成 K 线的索引
+    """
+    # 解析时间周期
+    tf_delta = pd.Timedelta(tf)
+
+    # 计算每根 K 线的收盘时间
+    close_times = df['date'] + tf_delta
+
+    # 找到 close_time <= timestamp 的最后一个 (已完成的 K 线)
+    valid_mask = close_times <= timestamp
+    if not valid_mask.any():
+        raise ValueError(f"No completed {tf} candle before {timestamp}")
+
+    return df.index[valid_mask].max()
+```
+
+### 2.4 数据缓存与窗口获取
 
 ```python
 class MultiScaleDataLoader:
     """高效的多时间尺度数据加载器"""
 
     def __init__(self, data_dir: str, pair: str, timeframes: list):
-        # 预加载数据到内存映射
+        # 预加载数据到内存
         self.data_cache = {}
         for tf in timeframes:
             path = f"{data_dir}/{pair.replace('/', '_')}-{tf}.feather"
             self.data_cache[tf] = pd.read_feather(path)
 
-        # 构建时间戳索引 (快速定位)
-        self.index = self._build_time_index()
+        # 确保时间索引排序
+        for tf in timeframes:
+            self.data_cache[tf] = self.data_cache[tf].sort_values('date').reset_index(drop=True)
 
     def get_window(self, timestamp: pd.Timestamp, tf_configs: dict) -> dict:
         """
@@ -125,8 +176,12 @@ class MultiScaleDataLoader:
             seq_len = config['seq_len']
             df = self.data_cache[tf]
 
-            # 找到时间戳对应的位置
+            # 找到时间戳对应的位置 (关键: 避免未来数据泄露)
             idx = self._locate_index(df, timestamp, tf)
+
+            # 检查是否有足够的历史数据
+            if idx < seq_len - 1:
+                raise ValueError(f"Insufficient {tf} data: need {seq_len}, have {idx + 1}")
 
             # 提取窗口 [idx-seq_len+1 : idx+1]
             window = df.iloc[idx-seq_len+1:idx+1][['open', 'high', 'low', 'close', 'volume']]
@@ -135,32 +190,424 @@ class MultiScaleDataLoader:
         return result
 ```
 
-### 2.4 数据预处理 (在模型内部)
+### 2.5 数据预处理与归一化
+
+#### 2.5.1 归一化的核心问题
+
+不同时间尺度的 `close[-1]` 对应不同时间点的价格：
 
 ```
-原始 OHLCV 窗口
+假设当前 BTC 价格 = $100,000 (5m close[-1])
+
+各尺度的 close[-1]:
+┌─────────┬─────────────┬──────────────────────────────┐
+│ 周期    │ close[-1]   │ 对应时间                     │
+├─────────┼─────────────┼──────────────────────────────┤
+│ 5m      │ $100,000    │ 14:35 (当前)                 │
+│ 1h      │ $99,500     │ 14:00 (1小时前)              │
+│ 4h      │ $98,500     │ 12:00 (2.5小时前)            │
+│ 1d      │ $98,000     │ 昨天收盘                     │
+└─────────┴─────────────┴──────────────────────────────┘
+```
+
+**问题**: 如果每个尺度用自己的 `close[-1]` 归一化，跨尺度注意力时价格值不可直接比较。
+
+#### 2.5.2 方案 A: 统一归一化基准
+
+**思路**: 所有尺度都用 5m 的 `close[-1]`（当前真实价格）作为归一化基准。
+
+```python
+def normalize_unified(windows: dict, current_price: float) -> dict:
+    """
+    统一归一化: 所有尺度用同一个基准价格
+
+    Args:
+        windows: {tf: np.array([seq_len, 5])}  # OHLCV
+        current_price: 5m close[-1]，当前市场价格
+
+    Returns:
+        {tf: np.array([seq_len, 5])}  # 归一化后的 OHLCV
+    """
+    result = {}
+    for tf, window in windows.items():
+        normalized = window.copy()
+        # 价格列 (OHLC) 归一化
+        normalized[:, :4] = window[:, :4] / current_price
+        # 成交量归一化 (相对窗口均值)
+        vol_mean = window[:, 4].mean()
+        normalized[:, 4] = window[:, 4] / vol_mean if vol_mean > 0 else 1.0
+        result[tf] = normalized
+    return result
+```
+
+**示例**:
+```
+1d 窗口 (16天前 ~ 昨天), 基准 = $100,000:
+
+K线[0]  (16天前): O=0.920, H=0.935, L=0.910, C=0.930  # 远离 1.0
+K线[15] (昨天):   O=0.975, H=0.990, L=0.970, C=0.980  # 接近 1.0
+```
+
+| 优点 | 缺点 |
+|------|------|
+| ✅ 跨尺度价格直接可比较 | ❌ 数值范围大 (0.5-1.5) |
+| ✅ 实现简单 | ❌ 可能过拟合绝对价格水平 |
+| ✅ 趋势信息隐含在数值中 | ❌ 不同币种波动率差异大 |
+
+**适用场景**: 单一币种、价格波动较稳定的情况
+
+#### 2.5.3 方案 B: 自身归一化 + 跨尺度偏移 (推荐)
+
+**思路**: 每个尺度用自己的 `close[-1]` 归一化（保持形态），同时添加一个 `offset` 特征表示与当前价格的关系。
+
+```python
+def normalize_with_offset(windows: dict, current_price: float) -> dict:
+    """
+    自身归一化 + 偏移: 保持形态，显式传递跨尺度信息
+
+    Args:
+        windows: {tf: np.array([seq_len, 5])}  # OHLCV
+        current_price: 5m close[-1]，当前市场价格
+
+    Returns:
+        {tf: np.array([seq_len, 6])}  # [O_norm, H_norm, L_norm, C_norm, V_norm, offset]
+    """
+    result = {}
+    for tf, window in windows.items():
+        seq_len = len(window)
+
+        # 1. 自身基准 (该尺度的 close[-1])
+        self_base = window[-1, 3]  # close of last candle
+
+        # 2. 价格归一化 (相对自身基准)
+        price_norm = window[:, :4] / self_base  # OHLC, 围绕 1.0
+
+        # 3. 成交量归一化 (相对窗口均值)
+        vol_mean = window[:, 4].mean()
+        vol_norm = window[:, 4] / vol_mean if vol_mean > 0 else np.ones(seq_len)
+
+        # 4. 跨尺度偏移 (该尺度基准相对于当前价格)
+        offset = (self_base / current_price) - 1  # 标量
+        offset_col = np.full((seq_len, 1), offset)
+
+        # 5. 组合: [seq_len, 6]
+        result[tf] = np.concatenate([
+            price_norm,           # [seq_len, 4]
+            vol_norm[:, None],    # [seq_len, 1]
+            offset_col            # [seq_len, 1]
+        ], axis=1)
+
+    return result
+```
+
+**示例**:
+```
+场景: 当前价格 $100,000, 日线基准 $98,000 (昨天收盘)
+
+1d 窗口归一化后 (基准 = $98,000, offset = -0.02):
+
+K线[0]  (16天前): O=0.939, H=0.954, L=0.929, C=0.949, V=0.7, offset=-0.02
+K线[15] (昨天):   O=0.995, H=1.010, L=0.990, C=1.000, V=1.0, offset=-0.02
+                                              ↑                    ↑
+                                          围绕 1.0              告诉模型:
+                                          形态保留              "日线基准比现价低 2%"
+
+5m 窗口归一化后 (基准 = $100,000, offset = 0.00):
+
+K线[0]  (12小时前): O=0.985, H=0.986, L=0.984, C=0.986, V=1.2, offset=0.00
+K线[143] (现在):    O=0.999, H=1.001, L=0.998, C=1.000, V=1.1, offset=0.00
+```
+
+| 优点 | 缺点 |
+|------|------|
+| ✅ 数值稳定 (0.9-1.1 范围) | ❌ 特征维度增加 (5→6) |
+| ✅ 保留 K 线形态特征 | ❌ offset 是标量，信息密度低 |
+| ✅ 跨尺度信息通过 offset 显式传递 | |
+| ✅ 泛化能力更好 (形态独立于绝对价格) | |
+
+**模型如何利用 offset**:
+```
+跨尺度注意力时，模型可以学习:
+
+1. 形态识别 (来自 OHLC_norm):
+   - 5m 出现连续阳线
+   - 1d 形成上升趋势
+
+2. 趋势强度 (来自 offset):
+   - offset_1d = -0.02 → 过去 16 天涨了 2%
+   - offset_4h = -0.015 → 过去 8 天涨了 1.5%
+   - 模型理解: 中长期趋势向上
+
+3. 跨尺度对比 (通过 offset 差异):
+   - |offset_1d - offset_5m| = 0.02
+   - 模型判断: 短期涨幅相对长期是否过快/过慢
+```
+
+**适用场景**: 多币种、需要泛化能力、不同市场状态
+
+#### 2.5.4 价格归一化方案选择
+
+```
+┌─────────────┬────────────────┬────────────────┐
+│             │ 方案 A         │ 方案 B (推荐)  │
+│             │ 统一基准       │ 自身+偏移      │
+├─────────────┼────────────────┼────────────────┤
+│ 数值范围    │ 0.5 ~ 1.5      │ 0.9 ~ 1.1      │
+│ 实现复杂度  │ 简单           │ 中等           │
+│ 形态保留    │ 部分           │ 完整           │
+│ 跨尺度信息  │ 隐式           │ 显式 (offset)  │
+│ 泛化能力    │ 较差           │ 较好           │
+│ 推荐场景    │ 单币种原型     │ 生产环境       │
+└─────────────┴────────────────┴────────────────┘
+```
+
+#### 2.5.5 成交量归一化 (独立处理)
+
+成交量与价格有本质区别，需要单独设计归一化方案。
+
+**成交量的特殊性**:
+```
+1. 不同时间尺度的成交量不可直接比较:
+   - 5m  均值: 100 BTC/根
+   - 1h  均值: 1,200 BTC/根 (约 12×5m)
+   - 1d  均值: 28,800 BTC/根
+
+2. 分布特点:
+   - 高度右偏 (大部分时间低，偶尔暴涨)
+   - 跨币种差异巨大 (BTC vs 山寨币)
+   - 有明显的日内/周内周期性
+```
+
+##### 方案 V1: 窗口均值归一化 (简单)
+
+```python
+def normalize_volume_mean(volume: np.ndarray) -> np.ndarray:
+    """相对于窗口均值归一化"""
+    vol_mean = volume.mean()
+    return volume / vol_mean if vol_mean > 0 else np.ones_like(volume)
+
+# 示例
+volume = [100, 50, 200, 80, 150]  # 均值 = 116
+vol_norm = [0.86, 0.43, 1.72, 0.69, 1.29]  # 围绕 1.0
+```
+
+| 优点 | 缺点 |
+|------|------|
+| ✅ 实现简单 | ❌ 跨尺度不可比 |
+| ✅ 围绕 1.0 波动 | ❌ 异常值影响均值 |
+|  | ❌ 数值范围不固定 (0~∞) |
+
+**适用**: 快速原型、单一时间尺度
+
+##### 方案 V2: 对数变换 + Z-score 标准化
+
+```python
+def normalize_volume_log_zscore(volume: np.ndarray) -> np.ndarray:
+    """对数变换后 Z-score 标准化"""
+    # 对数变换压缩极端值
+    vol_log = np.log1p(volume)  # log(1+x) 避免 log(0)
+
+    # Z-score 标准化
+    mean, std = vol_log.mean(), vol_log.std()
+    return (vol_log - mean) / std if std > 0 else np.zeros_like(vol_log)
+
+# 示例
+volume = [100, 50, 200, 80, 150]
+vol_log = [4.62, 3.93, 5.30, 4.39, 5.02]
+vol_norm = [-0.23, -1.50, 1.02, -0.65, 0.49]  # 围绕 0, 标准差 1
+```
+
+| 优点 | 缺点 |
+|------|------|
+| ✅ 压缩极端值 | ❌ 跨尺度仍不可比 |
+| ✅ 更接近正态分布 | ❌ 需要记录 mean/std 用于推理 |
+| ✅ 数值范围稳定 (-3~3) | |
+
+**适用**: 单币种训练、对分布敏感的模型
+
+##### 方案 V3: 百分位排名 (推荐原型)
+
+```python
+def normalize_volume_percentile(volume: np.ndarray) -> np.ndarray:
+    """
+    将成交量转换为窗口内的百分���排名 [0, 1]
+
+    优势: 完全消除量纲，专注于"相对高低"
+    """
+    from scipy.stats import rankdata
+    ranks = rankdata(volume, method='average')
+    return (ranks - 1) / (len(ranks) - 1)  # 归一化到 [0, 1]
+
+# 示例
+volume = [100, 50, 200, 80, 150]
+vol_norm = [0.50, 0.00, 1.00, 0.25, 0.75]
+#           ↑     ↑     ↑     ↑     ↑
+#          中等  最低  最高  较低  较高
+```
+
+| 优点 | 缺点 |
+|------|------|
+| ✅ 完全无量纲 [0, 1] | ❌ 丢失绝对大小信息 |
+| ✅ 对异常值鲁棒 | ❌ 计算稍慢 (需要排序) |
+| ✅ **跨尺度语义一致** | |
+
+**语义一致性说明**:
+```
+5m  vol_rank = 0.9 → "这根 5m K线成交量在最近 144 根中排前 10%"
+1d  vol_rank = 0.9 → "这根日线成交量在最近 16 天中排前 10%"
+
+虽然绝对量不同，但"相对活跃度"语义相同，跨尺度注意力可以比较。
+```
+
+**适用**: 快速原型、跨尺度模型
+
+##### 方案 V4: 双特征 (推荐生产)
+
+**结合相对量和绝对量信息**:
+
+```python
+def normalize_volume_dual(
+    volume: np.ndarray,
+    global_median: float
+) -> np.ndarray:
+    """
+    返回两个特征:
+    1. 窗口内百分位排名 (相对位置) [0, 1]
+    2. 相对于全局中位数的对数比例 (绝对水平)
+
+    Args:
+        volume: 窗口内成交量 [seq_len]
+        global_median: 该币种该周期的历史中位数成交量
+
+    Returns:
+        [seq_len, 2] - [rank, global_ratio]
+    """
+    from scipy.stats import rankdata
+    seq_len = len(volume)
+
+    # 特征1: 窗口内排名 [0, 1]
+    ranks = rankdata(volume, method='average')
+    rank_norm = (ranks - 1) / (seq_len - 1) if seq_len > 1 else np.zeros(seq_len)
+
+    # 特征2: 相对全局中位数的对数比例
+    # log1p 使得: 中位数对应约 0.69, 2倍中位数约 1.10, 0.5倍约 0.41
+    global_ratio = np.log1p(volume / global_median)
+
+    return np.stack([rank_norm, global_ratio], axis=-1)  # [seq_len, 2]
+
+# 示例
+volume = [100, 50, 200, 80, 150]
+global_median = 120  # 历史中位数
+
+# 特征1: 窗口排名
+rank_norm = [0.50, 0.00, 1.00, 0.25, 0.75]
+
+# 特征2: 全局比例 (log1p(v/120))
+global_ratio = [0.56, 0.29, 0.98, 0.41, 0.81]
+
+# 组合输出: [5, 2]
+vol_features = [
+    [0.50, 0.56],  # K线0: 窗口中等，略低于历史中位数
+    [0.00, 0.29],  # K线1: 窗口最低，明显低于历史
+    [1.00, 0.98],  # K线2: 窗口最高，也是历史较高
+    [0.25, 0.41],  # K线3: 窗口较低，低于历史
+    [0.75, 0.81],  # K线4: 窗口较高，略高于历史
+]
+```
+
+| 优点 | 缺点 |
+|------|------|
+| ✅ 同时保留相对和绝对信息 | ❌ 特征维度 +1 |
+| ✅ 跨尺度可比 (排名语义一致) | ❌ 需要预计算全局中位数 |
+| ✅ 对异常值鲁棒 | |
+| ✅ 模型可学习"绝对放量"和"相对放量" | |
+
+**全局中位数的获取**:
+```python
+# 训练前预计算并存储
+global_volume_medians = {
+    'BTC/USDT': {
+        '5m': 150.0,
+        '1h': 1800.0,
+        '1d': 43200.0,
+    },
+    'ETH/USDT': {
+        '5m': 500.0,
+        # ...
+    }
+}
+```
+
+**适用**: 生产环境、多币种、需要精细成交量分析
+
+##### 成交量方案对比总结
+
+```
+┌─────────────┬───────────┬───────────┬───────────┬─────────────┐
+│             │ V1 均值   │ V2 对数   │ V3 排名   │ V4 双特征   │
+│             │           │ +Z-score  │ (推荐原型)│ (推荐生产)  │
+├─────────────┼───────────┼───────────┼───────────┼─────────────┤
+│ 数值范围    │ 0~∞       │ -3~3      │ 0~1       │ 0~1 + log   │
+│ 异常值鲁棒  │ ❌        │ ✅        │ ✅✅      │ ✅✅        │
+│ 跨尺度可比  │ ❌        │ ❌        │ ✅        │ ✅          │
+│ 保留绝对量  │ ✅        │ ✅        │ ❌        │ ✅          │
+│ 实现复杂度  │ 简单      │ 中等      │ 中等      │ 较复杂      │
+│ 额外特征维度│ 0         │ 0         │ 0         │ +1          │
+└─────────────┴───────────┴───────────┴───────────┴─────────────┘
+```
+
+##### 推荐组合
+
+```
+组合1: 价格方案B + 成交量V3 (原型开发)
+────────────────────────────────────────
+特征: [O_norm, H_norm, L_norm, C_norm, V_rank, offset]
+维度: 6
+优点: 简单，跨尺度一致
+
+组合2: 价格方案B + 成交量V4 (生产环境)
+────────────────────────────────────────
+特征: [O_norm, H_norm, L_norm, C_norm, V_rank, V_global, offset]
+维度: 7
+优点: 信息完整，可学习绝对/相对放量
+```
+
+#### 2.5.6 完整预处理流程
+
+```
+原始 OHLCV 窗口 (多尺度)
        │
        ▼
-┌─────────────────────────────────────────────┐
-│  1. 价格归一化 (相对于窗口最后一根收盘价)   │
-│     p_norm = p / close[-1]                  │
-│     → 所有价格变成相对于当前价格的比例      │
-├─────────────────────────────────────────────┤
-│  2. 对数变换 (可选)                         │
-│     p_log = log(p_norm)                     │
-│     → 使分布更接近正态                      │
-├─────────────────────────────────────────────┤
-│  3. 成交量归一化                            │
-│     v_norm = v / mean(v[-N:])               │
-│     → 相对于近期平均成交量                  │
-├─────────────────────────────────────────────┤
-│  4. 在 GPU 上执行 (torch.Tensor 操作)       │
-│     避免 CPU-GPU 数据搬运开销              │
-└─────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────┐
+│  1. 时间对齐 (_locate_index)                        │
+│     确保每个尺度只使用已完成的 K 线                 │
+├─────────────────────────────────────────────────────┤
+│  2. 提取窗口                                        │
+│     各尺度按配置提取 seq_len 根 K 线                │
+├─────────────────────────────────────────────────────┤
+│  3. 价格归一化 (方案 A 或 B)                        │
+│     A: 统一基准                                     │
+│     B: 自身+偏移 (推荐)                             │
+├─────────────────────────────────────────────────────┤
+│  4. 成交量归一化 (方案 V1-V4)                       │
+│     V3: 排名 (原型)                                 │
+│     V4: 双特征 (生产)                               │
+├─────────────────────────────────────────────────────┤
+│  5. 对数变换 (可选，仅价格)                         │
+│     price_log = log(price_norm)                     │
+├─────────────────────────────────────────────────────┤
+│  6. 转换为 Tensor                                   │
+│     在 GPU 上执行后续计算                           │
+└─────────────────────────────────────────────────────┘
        │
        ▼
  归一化后的多尺度 K 线张量
-```
+
+ 组合1 (B+V3): {tf: [B, seq_len, 6]}
+   → [O_norm, H_norm, L_norm, C_norm, V_rank, offset]
+
+ 组合2 (B+V4): {tf: [B, seq_len, 7]}
+   → [O_norm, H_norm, L_norm, C_norm, V_rank, V_global, offset]
 
 ---
 
@@ -272,11 +719,12 @@ loss = Σ pinball_loss(y, ŷ[:, i], tau=quantiles[i])
 #### 4.2.1 低频尺度编码器 (1d, 4h) - 保留完整序列
 
 ```
-输入: [batch, seq_len, 5]  # 5 = OHLCV
+输入: [batch, seq_len, D_in]
+      D_in = 5 (方案A: OHLCV) 或 6 (方案B: OHLCV + offset)
        │
        ▼
 ┌─────────────────────────────────────────┐
-│ Linear Projection: 5 → d_model          │
+│ Linear Projection: D_in → d_model       │
 └─────────────────────────────────────────┘
        │
        ▼
@@ -301,15 +749,16 @@ loss = Σ pinball_loss(y, ŷ[:, i], tau=quantiles[i])
 #### 4.2.2 高频尺度编码器 (1h, 15m, 5m) - Patch 压缩
 
 ```
-输入: [batch, seq_len, 5]  # 例如 5m: [B, 144, 5]
+输入: [batch, seq_len, D_in]  # 例如 5m: [B, 144, D_in]
+      D_in = 5 (方案A) 或 6 (方案B)
        │
        ▼
 ┌─────────────────────────────────────────┐
 │ Patch Embedding (1D Conv)               │
 │                                         │
-│ Conv1d(in=5, out=d_model, kernel=6, stride=6)
+│ Conv1d(in=D_in, out=d_model, kernel=6, stride=6)
 │ 将 6 根 K 线压缩为 1 个 patch           │
-│ [B, 144, 5] → [B, 24, d_model]          │
+│ [B, 144, D_in] → [B, 24, d_model]       │
 └─────────────────────────────────────────┘
        │
        ▼
@@ -403,6 +852,16 @@ model_config = {
         '15m': {'seq_len': 96,  'patch_size': 4},   # 4:1 压缩
         '5m':  {'seq_len': 144, 'patch_size': 6},   # 6:1 压缩
     },
+
+    # 归一化方案 (见 2.5 节)
+    'price_normalization': 'offset',   # 'unified' (方案A) 或 'offset' (方案B，推荐)
+    'volume_normalization': 'rank',    # 'mean'(V1), 'zscore'(V2), 'rank'(V3), 'dual'(V4)
+
+    # 输入特征维度 (根据归一化方案自动计算)
+    # 方案 A + V1/V2/V3: d_input = 5
+    # 方案 B + V3:       d_input = 6  [OHLC_norm, V_rank, offset]
+    # 方案 B + V4:       d_input = 7  [OHLC_norm, V_rank, V_global, offset]
+    'd_input': 6,  # 推荐: 方案B + V3
 
     # 模型结构
     'd_model': 128,
