@@ -8,7 +8,6 @@ user_data/*
 !user_data/strategy/sample_strategy.py
 !user_data/notebooks
 !user_data/models
-!user_data/freqaimodels
 !user_data/docs
 
 # 追踪我的策略代码
@@ -18,7 +17,13 @@ user_data/strategies/__pycache__/
 # 追踪自定义脚本
 !user_data/scripts/
 user_data/scripts/__pycache__/
-user_data/freqaimodels/*
+
+# 追踪自定义 FreqAI 模型
+!user_data/freqaimodels/
+!user_data/freqaimodels/**
+user_data/freqaimodels/__pycache__/
+user_data/freqaimodels/**/__pycache__/
+
 user_data/models/*
 user_data/notebooks/*
 freqtrade-plot.html
@@ -125,3 +130,5 @@ target/
 !config_examples/config_freqai.example.json
 
 docker-compose-*.yml
+
+*.local.*
