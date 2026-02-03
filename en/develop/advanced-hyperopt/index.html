@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../images/logo.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.0">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.1">
     
     
       
@@ -31,7 +31,7 @@
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.618322db.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
       
         
         <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
@@ -334,53 +334,6 @@
   
   
   
-    
-    
-    
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
-        
-          
-          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Installation
-  
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_3">
-            <span class="md-nav__icon md-icon"></span>
-            
-  
-    Installation
-  
-
-          </label>
-          <ul class="md-nav__list" data-md-scrollfix>
-            
-              
-                
-  
-  
-  
-  
     <li class="md-nav__item">
       <a href="../installation/" class="md-nav__link">
         
@@ -389,7 +342,7 @@
   <span class="md-ellipsis">
     
   
-    Linux/MacOS/Raspberry
+    Installation
   
 
     
@@ -398,42 +351,6 @@
   
 
       </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../windows_installation/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Windows
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-          </ul>
-        </nav>
-      
     </li>
   
 
@@ -1672,10 +1589,9 @@
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Overriding pre-defined spaces">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
+</li>
+      
+        <li class="md-nav__item">
   <a href="#dynamic-parameters" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1685,8 +1601,8 @@
   </a>
   
 </li>
-        
-          <li class="md-nav__item">
+      
+        <li class="md-nav__item">
   <a href="#overriding-base-estimator" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1694,11 +1610,6 @@
       
     </span>
   </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
@@ -1996,10 +1907,9 @@
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Overriding pre-defined spaces">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
+</li>
+      
+        <li class="md-nav__item">
   <a href="#dynamic-parameters" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2009,8 +1919,8 @@
   </a>
   
 </li>
-        
-          <li class="md-nav__item">
+      
+        <li class="md-nav__item">
   <a href="#overriding-base-estimator" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2018,11 +1928,6 @@
       
     </span>
   </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
@@ -2188,7 +2093,7 @@ For the sample below, you then need to add the command line parameter <code>--hy
         <span class="p">]</span>
 
         <span class="c1"># Define a custom max_open_trades space</span>
-        <span class="k">def</span><span class="w"> </span><span class="nf">max_open_trades_space</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Dimension</span><span class="p">]:</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">max_open_trades_space</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Dimension</span><span class="p">]:</span>
             <span class="k">return</span> <span class="p">[</span>
                 <span class="n">Integer</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;max_open_trades&#39;</span><span class="p">),</span>
             <span class="p">]</span>
@@ -2197,7 +2102,7 @@ For the sample below, you then need to add the command line parameter <code>--hy
 <p class="admonition-title">Note</p>
 <p>All overrides are optional and can be mixed/matched as necessary.</p>
 </div>
-<h3 id="dynamic-parameters">Dynamic parameters<a class="headerlink" href="#dynamic-parameters" title="Permanent link">&para;</a></h3>
+<h2 id="dynamic-parameters">Dynamic parameters<a class="headerlink" href="#dynamic-parameters" title="Permanent link">&para;</a></h2>
 <p>Parameters can also be defined dynamically, but must be available to the instance once the <a href="../strategy-callbacks/#bot-start"><code>bot_start()</code> callback</a> has been called.</p>
 <div class="highlight"><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">MyAwesomeStrategy</span><span class="p">(</span><span class="n">IStrategy</span><span class="p">):</span>
 
@@ -2210,7 +2115,7 @@ For the sample below, you then need to add the command line parameter <code>--hy
 <p class="admonition-title">Warning</p>
 <p>Parameters created this way will not show up in the <code>list-strategies</code> parameter count.</p>
 </div>
-<h3 id="overriding-base-estimator">Overriding Base estimator<a class="headerlink" href="#overriding-base-estimator" title="Permanent link">&para;</a></h3>
+<h2 id="overriding-base-estimator">Overriding Base estimator<a class="headerlink" href="#overriding-base-estimator" title="Permanent link">&para;</a></h2>
 <p>You can define your own optuna sampler for Hyperopt by implementing <code>generate_estimator()</code> in the Hyperopt subclass.</p>
 <div class="highlight"><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">MyAwesomeStrategy</span><span class="p">(</span><span class="n">IStrategy</span><span class="p">):</span>
     <span class="k">class</span><span class="w"> </span><span class="nc">HyperOpt</span><span class="p">:</span>
@@ -2368,10 +2273,10 @@ Implement <code>generate_estimator()</code>  in your strategy</p>
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["content.code.annotate", "search.share", "content.code.copy", "content.action.edit", "navigation.top", "navigation.footer"], "search": "../assets/javascripts/workers/search.7a47a382.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"alias": true, "provider": "mike"}}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["content.code.annotate", "search.share", "content.code.copy", "content.action.edit", "navigation.top", "navigation.footer"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"alias": true, "provider": "mike"}}</script>
     
     
-      <script src="../assets/javascripts/bundle.e71a0d61.min.js"></script>
+      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
       
         <script src="../javascripts/config.js"></script>
       

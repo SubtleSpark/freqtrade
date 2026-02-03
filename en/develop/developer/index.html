@@ -21,7 +21,7 @@
       
       
       <link rel="icon" href="../images/logo.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.0">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.1">
     
     
       
@@ -29,7 +29,7 @@
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.618322db.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
       
         
         <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
@@ -332,53 +332,6 @@
   
   
   
-    
-    
-    
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
-        
-          
-          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Installation
-  
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_3">
-            <span class="md-nav__icon md-icon"></span>
-            
-  
-    Installation
-  
-
-          </label>
-          <ul class="md-nav__list" data-md-scrollfix>
-            
-              
-                
-  
-  
-  
-  
     <li class="md-nav__item">
       <a href="../installation/" class="md-nav__link">
         
@@ -387,7 +340,7 @@
   <span class="md-ellipsis">
     
   
-    Linux/MacOS/Raspberry
+    Installation
   
 
     
@@ -396,42 +349,6 @@
   
 
       </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../windows_installation/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Windows
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-          </ul>
-        </nav>
-      
     </li>
   
 
@@ -3255,10 +3172,10 @@ git<span class="w"> </span>checkout<span class="w"> </span>-b<span class="w"> </
 <p>Determine if crucial bugfixes have been made between this commit and the current state, and eventually cherry-pick these.</p>
 <ul>
 <li>Merge the release branch (stable) into this branch.</li>
-<li>Edit <code>freqtrade/__init__.py</code> and add the version matching the current date (for example <code>2019.7</code> for July 2019). Minor versions can be <code>2019.7.1</code> should we need to do a second release that month. Version numbers must follow allowed versions from PEP0440 to avoid failures pushing to pypi.</li>
+<li>Edit <code>freqtrade/__init__.py</code> and add the version matching the current date (for example <code>2025.7</code> for July 2025). Minor versions can be <code>2025.7.1</code> should we need to do a second release that month. Version numbers must follow allowed versions from PEP0440 to avoid failures pushing to pypi.</li>
 <li>Commit this part.</li>
 <li>Push that branch to the remote and create a PR against the <strong>stable branch</strong>.</li>
-<li>Update develop version to next version following the pattern <code>2019.8-dev</code>.</li>
+<li>Update develop version to next version following the pattern <code>2025.8-dev</code>.</li>
 </ul>
 <h3 id="create-changelog-from-git-commits">Create changelog from git commits<a class="headerlink" href="#create-changelog-from-git-commits" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><span class="c1"># Needs to be done before merging / pulling that branch.</span>
@@ -3286,31 +3203,31 @@ Make sure that freqUI CI on the release is finished and passed before merging th
 </ul>
 <details class="tip">
 <summary>Release template</summary>
-<div class="highlight"><pre><span></span><code>## Highlighted changes
+<div class="highlight"><pre><span></span><code># Highlighted changes
 
 - ...
 
-### How to update
+## How to update
 
 As always, you can update your bot using one of the following commands:
 
-#### docker-compose
+### docker-compose
 
 ```bash
 docker-compose pull
 docker-compose up -d
 ```
 
-#### Installation via setup script
+### Installation via setup script
 
-```
+``` bash
 # Deactivate venv and run 
 ./setup.sh --update
 ```
 
-#### Plain native installation
+### Plain native installation
 
-```
+``` bash
 git pull
 pip install -U -r requirements.txt
 ```
@@ -3435,10 +3352,10 @@ twine<span class="w"> </span>upload<span class="w"> </span>dist/*
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["content.code.annotate", "search.share", "content.code.copy", "content.action.edit", "navigation.top", "navigation.footer"], "search": "../assets/javascripts/workers/search.7a47a382.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"alias": true, "provider": "mike"}}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["content.code.annotate", "search.share", "content.code.copy", "content.action.edit", "navigation.top", "navigation.footer"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"alias": true, "provider": "mike"}}</script>
     
     
-      <script src="../assets/javascripts/bundle.e71a0d61.min.js"></script>
+      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
       
         <script src="../javascripts/config.js"></script>
       

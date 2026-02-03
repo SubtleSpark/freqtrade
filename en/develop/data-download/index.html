@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../images/logo.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.0">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.1">
     
     
       
@@ -31,7 +31,7 @@
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.618322db.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
       
         
         <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
@@ -334,53 +334,6 @@
   
   
   
-    
-    
-    
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
-        
-          
-          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Installation
-  
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_3">
-            <span class="md-nav__icon md-icon"></span>
-            
-  
-    Installation
-  
-
-          </label>
-          <ul class="md-nav__list" data-md-scrollfix>
-            
-              
-                
-  
-  
-  
-  
     <li class="md-nav__item">
       <a href="../installation/" class="md-nav__link">
         
@@ -389,7 +342,7 @@
   <span class="md-ellipsis">
     
   
-    Linux/MacOS/Raspberry
+    Installation
   
 
     
@@ -398,42 +351,6 @@
   
 
       </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../windows_installation/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Windows
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-          </ul>
-        </nav>
-      
     </li>
   
 
@@ -2431,6 +2348,7 @@ If you are updating existing data after inserting new pairs that you have no dat
 <span class="go">                               [--data-format-ohlcv {json,jsongz,feather,parquet}]</span>
 <span class="go">                               [--data-format-trades {json,jsongz,feather,parquet}]</span>
 <span class="go">                               [--trading-mode {spot,margin,futures}]</span>
+<span class="go">                               [--candle-types {spot,futures,mark,index,premiumIndex,funding_rate} [{spot,futures,mark,index,premiumIndex,funding_rate} ...]]</span>
 <span class="go">                               [--prepend]</span>
 
 <span class="go">options:</span>
@@ -2470,6 +2388,11 @@ If you are updating existing data after inserting new pairs that you have no dat
 <span class="go">                        `feather`).</span>
 <span class="go">  --trading-mode, --tradingmode {spot,margin,futures}</span>
 <span class="go">                        Select Trading mode</span>
+<span class="go">  --candle-types {spot,futures,mark,index,premiumIndex,funding_rate} [{spot,futures,mark,index,premiumIndex,funding_rate} ...]</span>
+<span class="go">                        Select candle type to download. Defaults to the</span>
+<span class="go">                        necessary candles for the selected trading mode (e.g.</span>
+<span class="go">                        &#39;spot&#39; or (&#39;futures&#39;, &#39;funding_rate&#39; and &#39;mark&#39;) for</span>
+<span class="go">                        futures).</span>
 <span class="go">  --prepend             Allow data prepending. (Data-appending is disabled)</span>
 
 <span class="go">Common arguments:</span>
@@ -2524,6 +2447,7 @@ To also download data for inactive (delisted) pairs, add <code>--include-inactiv
 <li>Given starting points are ignored if data is already available, downloading only missing data up to today.</li>
 <li>Use <code>--timeframes</code> to specify what timeframe download the historical candle (OHLCV) data for. Default is <code>--timeframes 1m 5m</code> which will download 1-minute and 5-minute data.</li>
 <li>To use exchange, timeframe and list of pairs as defined in your configuration file, use the <code>-c/--config</code> option. With this, the script uses the whitelist defined in the config as the list of currency pairs to download data for and does not require the pairs.json file. You can combine <code>-c/--config</code> with most other options.</li>
+<li>When downloading futures data (<code>--trading-mode futures</code> or a configuration specifying futures mode), freqtrade will automatically download the necessary candle types (e.g. <code>mark</code> and <code>funding_rate</code> candles) unless specified otherwise via <code>--candle-types</code>.</li>
 </ul>
 <details class="note">
 <summary>Permission denied errors</summary>
@@ -2993,10 +2917,10 @@ Most other exchanges provide OHLCV data with sufficient history, so downloading 
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["content.code.annotate", "search.share", "content.code.copy", "content.action.edit", "navigation.top", "navigation.footer"], "search": "../assets/javascripts/workers/search.7a47a382.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"alias": true, "provider": "mike"}}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["content.code.annotate", "search.share", "content.code.copy", "content.action.edit", "navigation.top", "navigation.footer"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"alias": true, "provider": "mike"}}</script>
     
     
-      <script src="../assets/javascripts/bundle.e71a0d61.min.js"></script>
+      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
       
         <script src="../javascripts/config.js"></script>
       

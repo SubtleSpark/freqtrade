@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../images/logo.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.0">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.1">
     
     
       
@@ -31,7 +31,7 @@
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.618322db.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
       
         
         <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
@@ -334,53 +334,6 @@
   
   
   
-    
-    
-    
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
-        
-          
-          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Installation
-  
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_3">
-            <span class="md-nav__icon md-icon"></span>
-            
-  
-    Installation
-  
-
-          </label>
-          <ul class="md-nav__list" data-md-scrollfix>
-            
-              
-                
-  
-  
-  
-  
     <li class="md-nav__item">
       <a href="../installation/" class="md-nav__link">
         
@@ -389,7 +342,7 @@
   <span class="md-ellipsis">
     
   
-    Linux/MacOS/Raspberry
+    Installation
   
 
     
@@ -398,42 +351,6 @@
   
 
       </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../windows_installation/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Windows
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-          </ul>
-        </nav>
-      
     </li>
   
 
@@ -1843,6 +1760,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#does-freqtrade-support-sandbox-accounts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Does freqtrade support sandbox accounts?
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#the-bot-does-not-start" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2368,6 +2296,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#does-freqtrade-support-sandbox-accounts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Does freqtrade support sandbox accounts?
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#the-bot-does-not-start" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2702,7 +2641,7 @@
 
 <h1 id="freqtrade-faq">Freqtrade FAQ<a class="headerlink" href="#freqtrade-faq" title="Permanent link">&para;</a></h1>
 <h2 id="supported-markets">Supported Markets<a class="headerlink" href="#supported-markets" title="Permanent link">&para;</a></h2>
-<p>Freqtrade supports spot trading, as well as (isolated) futures trading for some selected exchanges. Please refer to the <a href="../#supported-futures-exchanges-experimental">documentation start page</a> for an up-to-date list of supported exchanges.</p>
+<p>Freqtrade supports spot trading, as well as futures trading for some selected exchanges. Please refer to the <a href="../#supported-futures-exchanges-experimental">documentation start page</a> for an up-to-date list of supported exchanges.</p>
 <h3 id="can-my-bot-open-short-positions">Can my bot open short positions?<a class="headerlink" href="#can-my-bot-open-short-positions" title="Permanent link">&para;</a></h3>
 <p>Freqtrade can open short positions in futures markets.
 This requires the strategy to be made for this - and <code>"trading_mode": "futures"</code> in the configuration.
@@ -2719,6 +2658,10 @@ Please make sure to read the <a href="../leverage/">relevant documentation page<
 <p>No. Freqtrade will only open one position per pair at a time.
 You can however use the <a href="../strategy-callbacks/#adjust-trade-position"><code>adjust_trade_position()</code> callback</a> to adjust an open position.</p>
 <p>Backtesting provides an option for this in <code>--eps</code> - however this is only there to highlight "hidden" signals, and will not work in live.</p>
+<h3 id="does-freqtrade-support-sandbox-accounts">Does freqtrade support sandbox accounts?<a class="headerlink" href="#does-freqtrade-support-sandbox-accounts" title="Permanent link">&para;</a></h3>
+<p>No, but you can use dry-run mode to simulate trading without risking real funds.</p>
+<p>Sandbox markets are separate, simulated markets - which are not suitable to test your strategy in a realistic environment.
+These markets usually have different order books, liquidity and trading behaviour (usually with very few participants) - which makes them unsuitable for realistic tests of your strategy.</p>
 <h3 id="the-bot-does-not-start">The bot does not start<a class="headerlink" href="#the-bot-does-not-start" title="Permanent link">&para;</a></h3>
 <p>Running the bot with <code>freqtrade trade --config config.json</code> shows the output <code>freqtrade: command not found</code>.</p>
 <p>This could be caused by the following reasons:</p>
@@ -3032,10 +2975,10 @@ We only support the most recent release (e.g. 2025.8) and the current developmen
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["content.code.annotate", "search.share", "content.code.copy", "content.action.edit", "navigation.top", "navigation.footer"], "search": "../assets/javascripts/workers/search.7a47a382.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"alias": true, "provider": "mike"}}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["content.code.annotate", "search.share", "content.code.copy", "content.action.edit", "navigation.top", "navigation.footer"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"alias": true, "provider": "mike"}}</script>
     
     
-      <script src="../assets/javascripts/bundle.e71a0d61.min.js"></script>
+      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
       
         <script src="../javascripts/config.js"></script>
       
