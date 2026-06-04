@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../images/logo.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.1">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
     
     
       
@@ -567,6 +567,28 @@
   
     <nav class="md-nav" aria-label="Stop Loss On-Exchange/Freqtrade">
       <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#which-order-type-is-used-for-stoploss-on-exchange" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Which order type is used for stoploss on exchange?
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#which-order-type-should-i-use-for-stoploss-on-exchange" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Which order type should i use for stoploss on exchange?
+      
+    </span>
+  </a>
+  
+</li>
         
           <li class="md-nav__item">
   <a href="#stoploss_on_exchange-and-stoploss_on_exchange_limit_ratio" class="md-nav__link">
@@ -2026,6 +2048,28 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#which-order-type-is-used-for-stoploss-on-exchange" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Which order type is used for stoploss on exchange?
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#which-order-type-should-i-use-for-stoploss-on-exchange" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Which order type should i use for stoploss on exchange?
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#stoploss_on_exchange-and-stoploss_on_exchange_limit_ratio" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2243,13 +2287,17 @@ Stoploss calculations do include fees, so a stoploss of -10% is placed exactly 1
 The Order-type will be ignored if only one mode is available.</p>
 <details class="info">
 <summary>Supported exchanges and stoploss types</summary>
+<div class="admonition note">
+<p class="admonition-title">Supported exchanges</p>
+<p>The below list <strong>only</strong> contains <strong>supported exchanges</strong>. Other exchanges may work, but will not have stoploss on exchange available.</p>
+</div>
 <table>
 <thead>
 <tr>
 <th>Exchange</th>
 <th>Mode</th>
 <th>Margin mode</th>
-<th>Stoploss type</th>
+<th>Stoploss on exchange</th>
 </tr>
 </thead>
 <tbody>
@@ -2275,7 +2323,7 @@ The Order-type will be ignored if only one mode is available.</p>
 <td><a href="../exchanges/#bitmart">Bitmart</a></td>
 <td>spot</td>
 <td></td>
-<td>❌ (not supported)</td>
+<td>❌ (not available)</td>
 </tr>
 <tr>
 <td><a href="../exchanges/#bitget">Bitget</a></td>
@@ -2293,7 +2341,7 @@ The Order-type will be ignored if only one mode is available.</p>
 <td><a href="../exchanges/#bybit">Bybit</a></td>
 <td>spot</td>
 <td></td>
-<td>❌ (not supported)</td>
+<td>❌ (not available)</td>
 </tr>
 <tr>
 <td><a href="../exchanges/#bybit">Bybit</a></td>
@@ -2323,7 +2371,7 @@ The Order-type will be ignored if only one mode is available.</p>
 <td><a href="../exchanges/#hyperliquid">Hyperliquid</a></td>
 <td>spot</td>
 <td></td>
-<td>❌ (not supported)</td>
+<td>❌ (not available)</td>
 </tr>
 <tr>
 <td><a href="../exchanges/#hyperliquid">Hyperliquid</a></td>
@@ -2335,6 +2383,12 @@ The Order-type will be ignored if only one mode is available.</p>
 <td><a href="../exchanges/#kraken">Kraken</a></td>
 <td>spot</td>
 <td></td>
+<td>market, limit</td>
+</tr>
+<tr>
+<td><a href="../exchanges/#kraken-futures">Kraken</a></td>
+<td>futures</td>
+<td>isolated</td>
 <td>market, limit</td>
 </tr>
 <tr>
@@ -2353,7 +2407,7 @@ The Order-type will be ignored if only one mode is available.</p>
 <td><a href="../exchanges/#bitvavo">Bitvavo</a></td>
 <td>spot</td>
 <td></td>
-<td>❌ (not supported)</td>
+<td>❌ (not available)</td>
 </tr>
 <tr>
 <td><a href="../exchanges/#kucoin">Kucoin</a></td>
@@ -2375,6 +2429,18 @@ If set to low/tight you will have greater risk of missing fill on the order and 
 In that case, the bot will fallback to using the <code>emergency_exit</code> order type to place a market order as placing the stoploss order failed.
 Freqtrade currently does not implement a limitation to avoid this situation, so please ensure your stoploss values are within reasonable limits for your exchange or disable stoploss on exchange.</p>
 </div>
+<h3 id="which-order-type-is-used-for-stoploss-on-exchange">Which order type is used for stoploss on exchange?<a class="headerlink" href="#which-order-type-is-used-for-stoploss-on-exchange" title="Permanent link">&para;</a></h3>
+<p>The order type used for stoploss on exchange is determined by the <code>stoploss</code> value and the exchange capabilities.
+If your selected exchange supports both stop-limit and stop-market orders, then the <code>stoploss</code> value will determine which order type is used for stoploss on exchange.
+If your exchange only supports one of the two order types, you must configure your <code>stoploss</code> value accordingly, otherwise the bot will fail to start.</p>
+<h3 id="which-order-type-should-i-use-for-stoploss-on-exchange">Which order type should i use for stoploss on exchange?<a class="headerlink" href="#which-order-type-should-i-use-for-stoploss-on-exchange" title="Permanent link">&para;</a></h3>
+<p>If we translate the two stoploss order types into human words - they would be something like this:</p>
+<ul>
+<li><strong>stoploss-market</strong> -&gt; "when stop triggers, get me the hell out of here at whatever price".</li>
+<li><strong>stoploss-limit</strong> -&gt; "when stop triggers, place a limit order x% below the stoploss price. I accept a loss of "stoploss + 1%" at worst - but if price jumps further - i accept to wait for price to get back down to me, potentially resulting in a much bigger loss than "stoploss + 1%".</li>
+</ul>
+<p>As a consequence, we recommend using stoploss-market orders whenever possible, as the main point of a stoploss is to get you out of a position when the market is crashing, and in such situations, you'll want to exit the position immediately at the best available price, rather than risking a limit order not getting filled and potentially incurring even greater losses.
+The choice is ultimately up to you, but please be aware of the risk of using stoploss-limit orders, especially in volatile markets.</p>
 <h3 id="stoploss_on_exchange-and-stoploss_on_exchange_limit_ratio">stoploss_on_exchange and stoploss_on_exchange_limit_ratio<a class="headerlink" href="#stoploss_on_exchange-and-stoploss_on_exchange_limit_ratio" title="Permanent link">&para;</a></h3>
 <p>Enable or Disable stop loss on exchange.
 If the stoploss is <em>on exchange</em> it means a stoploss limit order is placed on the exchange immediately after buy order fills. This will protect you against sudden crashes in market, as the order execution happens purely within the exchange, and has no potential network overhead.</p>
@@ -2396,9 +2462,10 @@ This same logic will reapply a stoploss order on the exchange should you cancel 
 <h3 id="stoploss_price_type">stoploss_price_type<a class="headerlink" href="#stoploss_price_type" title="Permanent link">&para;</a></h3>
 <div class="admonition warning">
 <p class="admonition-title">Only applies to futures</p>
-<p><code>stoploss_price_type</code> only applies to futures markets (on exchanges where it's available).
+<p><code>stoploss_price_type</code> only applies to futures markets (on exchanges where it's available).<br />
 Freqtrade will perform a validation of this setting on startup, failing to start if an invalid setting for your exchange has been selected.
-Supported price types are gonna differs between each exchanges. Please check with your exchange on which price types it supports.</p>
+Supported price types are gonna differs between each exchanges. Please check with your exchange on which price types it supports.<br />
+In spot markets, this setting is ignored and not validated, as most exchanges only support one price type for stoploss orders on spot markets.</p>
 </div>
 <p>Stoploss on exchange on futures markets can trigger on different price types.
 The naming for these prices in exchange terminology often varies, but is usually something around "last" (or "contract price" ), "mark" and "index".</p>
